@@ -1,57 +1,167 @@
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { Component } from 'react';
+import axios from 'axios';
+import UserCard from './components/UserCard';
 import './App.css';
+import styled from 'styled-components';
 
-function App() {
-  const [date, setDate] = useState(null);
-  useEffect(() => {
-    async function getDate() {
-      const res = await fetch('/api/date');
-      const newDate = await res.text();
-      setDate(newDate);
+
+
+const AppContainer = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  width: 80%;
+  margin: 0 auto;
+  padding: 2%;
+  justify-content: space-between;
+`;
+
+
+
+export class App extends Component {
+  constructor(){
+    super();
+    this.state = {
+      userData: {},
+      followerData: [],
+      currentUser: 'mxxt1',
+      previousUser: 'mxxt1',
+      stagedUser: 'mxxt1'
+    };
+  }
+
+  async getUser(){
+    const user = await axios(`https://api.github.com/users/${this.state.currentUser}`);
+    console.log(user.data);
+    return user.data;
+  }
+
+  async getFollowers(){
+    const followers = await axios(`https://api.github.com/users/${this.state.currentUser}/followers`);
+    console.log(followers);
+    return followers.data;
+  }
+
+    componentDidMount(){
+
+      this.getUser()
+      .then(user => this.setState({userData: user}))
+      .catch(error => console.log(`getUser Error: `, error));
+      
+      this.getFollowers()
+      .then(followers => this.setState({followerData: followers}))
+      .catch(error => console.log(`getFollowers Error: `, error));
+      };
+
+    componentDidUpdate(){
+
+      if (this.state.currentUser !== this.state.previousUser) {
+        
+        this.getUser()
+      .then(user => this.setState({userData: user}))
+      .catch(error => console.log(`getUser Error: `, error));
+      
+      this.getFollowers()
+      .then(followers => this.setState({followerData: followers}))
+      .catch(error => console.log(`getFollowers Error: `, error));
+        
+      this.setState({previousUser: this.state.currentUser});
+    } 
+  };
+
+     
+
+      //form functions
+      changeHandler = event => {
+        console.log(event.target.value);
+        const gitUser = event.target.value.toLowerCase();
+        this.setState({stagedUser: gitUser});
+      ;}
+  
+      usernameSubmit = event => {
+        event.preventDefault();
+        this.setState({previousUser: this.state.currentUser})
+        console.log(this.state.previousUser);
+        this.setState({currentUser: this.state.stagedUser});
+        // this.setState({stagedUser: ''});
+
     }
-    getDate();
-  }, []);
-  return (
-    <main>
-      <h1>Create React App + Go API</h1>
-      <h2>
-        Deployed with{' '}
-        <a
-          href="https://zeit.co/docs"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          ZEIT Now
-        </a>
-        !
-      </h2>
-      <p>
-        <a
-          href="https://github.com/zeit/now-examples/tree/master/create-react-app-functions"
-          target="_blank"
-          rel="noreferrer noopener"
-        >
-          This project
-        </a>{' '}
-        was bootstrapped with{' '}
-        <a href="https://facebook.github.io/create-react-app/">
-          Create React App
-        </a>{' '}
-        and contains three directories, <code>/public</code> for static assets,{' '}
-        <code>/src</code> for components and content, and <code>/api</code>{' '}
-        which contains a serverless <a href="https://golang.org/">Go</a>{' '}
-        function. See{' '}
-        <a href="/api/date">
-          <code>api/date</code> for the Date API with Go
-        </a>
-        .
-      </p>
-      <br />
-      <h2>The date according to Go is:</h2>
-      <p>{date ? date : 'Loading date...'}</p>
-    </main>
-  );
+
+
+
+
+  render(){
+      console.log(`render`)
+      console.log(this.state.stagedUser);
+      console.log(this.state.currentUser);
+      return (
+        <div className="App">
+          <h1>{this.state.userData.name}'s Github Followers</h1>
+          <div>
+            <form onSubmit={this.usernameSubmit}>
+            <input type="text" placeholder="Enter Your Github Username" onChange={this.changeHandler} value={this.state.stagedUser}  />
+            </form>
+          </div>
+          <UserCard key={this.state.userData.id} data={this.state.userData}/>
+          <AppContainer>  
+            {this.state.followerData.map(item => (
+              <UserCard key={item.id} data={item} />
+            ))}
+        </AppContainer>
+        </div>
+      );
+  }
 }
 
-export default App;
+export default App
+
+
+
+
+//Keep as notes: 
+
+    // console.log('CDM')
+    // axios.get('https://api.github.com/users/mxxt1')
+    // .then(response => {
+    //   console.log(response.data);
+    //   this.setState({ userData: response.data})
+    // })
+    // .catch(error => {
+    //   console.log(error)
+    // });
+
+    // console.log(`CDM2`)
+    // axios.get('https://api.github.com/users/mxxt1/followers')
+    // .then(response => {
+    //   console.log(`followers: `,response)
+    //   this.setState({followerData: response.data})
+    // })
+    // .catch(error => {
+    //   console.log(error)
+    // })
+  
+
+
+
+
+
+  //iniitally used componentDidUpdate, but it triggers on every single update and kept making api calls. Like use effect watching followerData
+  // componentDidMount(){
+  //   console.log(`CDU`)
+  //   axios.get('https://api.github.com/users/mxxt1/followers')
+  //   .then(response => {
+  //     console.log(`followers: `,response)
+  //     this.setState({followerData: response.data})
+  //   })
+  //   .catch(error => {
+  //     console.log(error)
+  //   })
+
+  // }
+  
+  
+  
+
+
+
+
+
